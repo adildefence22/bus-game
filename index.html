@@ -3,707 +3,911 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>বাংলাদেশ বাস গেম 🚌</title>
+<title>Bangladesh Bus Simulator 3D 🚌</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Hind Siliguri',sans-serif}
+#c{display:block;width:100vw;height:100vh}
 
-  :root {
-    --green-dark: #1a3d0a;
-    --green-mid: #2d6e1a;
-    --green-light: #3a8a22;
-    --gold: #f5c842;
-    --gold-dark: #c8972a;
-    --red-bus: #d32f2f;
-    --cream: #fdf6e3;
-    --text-dark: #1a1a1a;
-    --text-mid: #444;
-    --panel-bg: rgba(255,255,255,0.96);
-    --shadow: 0 8px 32px rgba(0,0,0,0.25);
-  }
+/* HUD */
+#hud{
+  position:fixed;top:0;left:0;right:0;
+  pointer-events:none;z-index:10;
+}
+#speedometer{
+  position:fixed;bottom:20px;right:20px;
+  width:130px;height:130px;
+  background:radial-gradient(circle,#1a1a2e,#0d0d1a);
+  border:3px solid #f5c84a;
+  border-radius:50%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  box-shadow:0 0 20px rgba(245,200,74,0.4);
+}
+#speed-val{font-size:36px;font-weight:700;color:#f5c84a;line-height:1}
+#speed-unit{font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px}
+#speed-label{font-size:10px;color:rgba(255,255,255,0.4);margin-top:1px}
 
-  body {
-    font-family: 'Hind Siliguri', sans-serif;
-    background: var(--green-dark);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 16px;
-    overflow-x: hidden;
-  }
+#top-hud{
+  display:flex;gap:10px;padding:12px;
+  background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent);
+}
+.hcard{
+  background:rgba(0,0,0,0.6);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:8px;padding:6px 14px;
+  display:flex;flex-direction:column;align-items:center;
+}
+.hcard-label{font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:.5px;text-transform:uppercase}
+.hcard-val{font-size:16px;font-weight:600;color:#fff}
+.hcard-val.gold{color:#f5c84a}
+.hcard-val.green{color:#6ef06e}
 
-  /* Header */
-  header {
-    width: 100%;
-    max-width: 720px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0 12px;
-  }
-  .logo {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--gold);
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  }
-  .logo span { color: #fff; font-weight: 400; }
-  .badge {
-    background: var(--gold);
-    color: var(--green-dark);
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 20px;
-    letter-spacing: 0.5px;
-  }
+#route-bar{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px;padding:6px 20px;
+  font-size:13px;color:#fff;
+  display:flex;align-items:center;gap:8px;
+}
+.route-dot{width:8px;height:8px;border-radius:50%;background:#f5c84a}
 
-  /* HUD */
-  #hud {
-    width: 100%;
-    max-width: 720px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .hud-card {
-    background: var(--panel-bg);
-    border-radius: 10px;
-    padding: 8px 12px;
-    box-shadow: var(--shadow);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .hud-label {
-    font-size: 11px;
-    color: var(--text-mid);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .hud-val {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--text-dark);
-    line-height: 1.2;
-  }
-  .hud-val.green { color: #2a7a10; }
-  .hud-val.red   { color: #c62828; }
-  .hud-val.gold  { color: var(--gold-dark); }
+#gear-box{
+  position:fixed;bottom:20px;left:20px;
+  background:rgba(0,0,0,0.7);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:12px;padding:10px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+#gear-label{font-size:10px;color:rgba(255,255,255,0.5)}
+#gear-val{font-size:28px;font-weight:700;color:#f5c84a}
 
-  /* Canvas area */
-  #canvas-wrap {
-    position: relative;
-    width: 100%;
-    max-width: 720px;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    border: 3px solid var(--gold);
-  }
-  canvas {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
+#fuel-wrap{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+}
+#fuel-label{font-size:11px;color:rgba(255,255,255,0.5)}
+#fuel-bar{width:200px;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden}
+#fuel-fill{height:100%;background:#4caf50;border-radius:4px;transition:width .3s}
 
-  /* Overlay */
-  #overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: rgba(10,30,5,0.82);
-    backdrop-filter: blur(4px);
-    transition: opacity 0.3s;
-  }
-  #overlay.hidden { opacity: 0; pointer-events: none; }
-  .overlay-title {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--gold);
-    text-shadow: 0 2px 12px rgba(0,0,0,0.5);
-    margin-bottom: 8px;
-  }
-  .overlay-sub {
-    font-size: 16px;
-    color: #ddd;
-    margin-bottom: 6px;
-    text-align: center;
-    padding: 0 20px;
-  }
-  .overlay-score {
-    font-size: 28px;
-    font-weight: 700;
-    color: #fff;
-    margin: 10px 0 18px;
-  }
-  .btn-play {
-    background: var(--gold);
-    color: var(--green-dark);
-    border: none;
-    padding: 12px 36px;
-    font-size: 17px;
-    font-weight: 700;
-    border-radius: 40px;
-    cursor: pointer;
-    font-family: 'Hind Siliguri', sans-serif;
-    box-shadow: 0 4px 16px rgba(245,200,66,0.4);
-    transition: transform 0.1s, box-shadow 0.1s;
-  }
-  .btn-play:hover { transform: scale(1.04); box-shadow: 0 6px 20px rgba(245,200,66,0.5); }
-  .btn-play:active { transform: scale(0.97); }
+/* Controls hint */
+#controls-hint{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;
+  opacity:0.6;
+}
+.key-hint{
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:5px;padding:3px 8px;
+  font-size:11px;color:#fff;font-family:monospace;
+}
 
-  /* Fuel bar */
-  #fuel-bar-wrap {
-    position: absolute;
-    bottom: 10px;
-    right: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-  }
-  #fuel-label { font-size: 10px; color: #fff; font-weight: 600; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
-  #fuel-bar-bg {
-    width: 90px;
-    height: 8px;
-    background: rgba(0,0,0,0.35);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  #fuel-bar-fill {
-    height: 100%;
-    border-radius: 6px;
-    background: #4caf50;
-    transition: width 0.2s, background 0.3s;
-  }
+/* Passenger popup */
+#pass-popup{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(0,0,0,0.85);
+  border:2px solid #f5c84a;
+  border-radius:14px;padding:16px 28px;
+  text-align:center;color:#fff;
+  display:none;z-index:20;
+}
+#pass-popup h3{font-size:18px;color:#f5c84a;margin-bottom:6px}
+#pass-popup p{font-size:14px;color:rgba(255,255,255,0.8)}
 
-  /* Controls footer */
-  #footer {
-    width: 100%;
-    max-width: 720px;
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .keys-hint {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .key {
-    background: rgba(255,255,255,0.12);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.25);
-    border-radius: 6px;
-    padding: 2px 8px;
-    font-size: 12px;
-    font-family: monospace;
-  }
-  .hint-text { color: rgba(255,255,255,0.6); font-size: 12px; }
-  #btn-restart {
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-family: 'Hind Siliguri', sans-serif;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  #btn-restart:hover { background: rgba(245,200,66,0.15); }
+/* Menu overlay */
+#menu{
+  position:fixed;inset:0;
+  background:linear-gradient(135deg,#0d1a05,#1a3d0a,#0d2b05);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;gap:16px;
+}
+#menu h1{font-size:36px;font-weight:700;color:#f5c84a;text-shadow:0 2px 20px rgba(245,200,74,.5)}
+#menu h2{font-size:16px;color:rgba(255,255,255,0.6);font-weight:400}
+.bus-picker{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.bpick{
+  background:rgba(255,255,255,0.06);
+  border:2px solid rgba(255,255,255,0.15);
+  border-radius:12px;padding:12px 20px;
+  cursor:pointer;color:#fff;font-family:'Hind Siliguri',sans-serif;
+  font-size:14px;font-weight:600;
+  transition:all .15s;text-align:center;min-width:100px;
+}
+.bpick:hover{background:rgba(245,200,74,.15);border-color:#f5c84a}
+.bpick.sel{background:rgba(245,200,74,.2);border-color:#f5c84a;color:#f5c84a}
+.bpick-color{width:30px;height:12px;border-radius:4px;margin:6px auto 0}
+.route-picker{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.rpick{
+  background:rgba(255,255,255,0.06);
+  border:1.5px solid rgba(255,255,255,0.15);
+  border-radius:8px;padding:8px 16px;
+  cursor:pointer;color:rgba(255,255,255,0.7);
+  font-family:'Hind Siliguri',sans-serif;font-size:13px;
+  transition:all .15s;
+}
+.rpick:hover,.rpick.sel{background:rgba(245,200,74,.15);border-color:#f5c84a;color:#f5c84a}
+.section-label{font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
+.btn-start{
+  background:#f5c84a;color:#1a0d00;
+  border:none;padding:14px 50px;
+  font-size:18px;font-weight:700;
+  border-radius:40px;cursor:pointer;
+  font-family:'Hind Siliguri',sans-serif;
+  box-shadow:0 4px 24px rgba(245,200,74,.4);
+  transition:transform .12s;margin-top:8px;
+}
+.btn-start:hover{transform:scale(1.04)}
 
-  /* Mobile controls */
-  #mobile-controls {
-    display: none;
-    width: 100%;
-    max-width: 720px;
-    margin-top: 12px;
-    justify-content: center;
-  }
-  .dpad {
-    display: grid;
-    grid-template-areas: ". up ." "left . right" ". down .";
-    gap: 6px;
-  }
-  .dpad-btn {
-    width: 52px; height: 52px;
-    background: rgba(255,255,255,0.12);
-    border: 1.5px solid rgba(255,255,255,0.25);
-    border-radius: 10px;
-    color: #fff;
-    font-size: 22px;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    -webkit-user-select: none;
-    transition: background 0.1s;
-  }
-  .dpad-btn:active { background: rgba(245,200,66,0.3); }
-  .dpad-btn.up    { grid-area: up; }
-  .dpad-btn.down  { grid-area: down; }
-  .dpad-btn.left  { grid-area: left; }
-  .dpad-btn.right { grid-area: right; }
+/* Flash message */
+#flash{
+  position:fixed;top:30%;left:50%;transform:translateX(-50%);
+  font-size:20px;font-weight:700;color:#f5c84a;
+  text-shadow:0 2px 10px rgba(0,0,0,.8);
+  pointer-events:none;opacity:0;transition:opacity .3s;
+  white-space:nowrap;
+}
+#flash.show{opacity:1}
 
-  @media (max-width: 500px) {
-    #hud { grid-template-columns: repeat(2,1fr); }
-    .logo { font-size: 17px; }
-    #mobile-controls { display: flex; }
-    #footer .keys-hint { display: none; }
-  }
+/* Mobile controls */
+#mobile-btns{
+  position:fixed;bottom:10px;left:10px;right:10px;
+  display:none;
+  justify-content:space-between;
+  align-items:flex-end;
+  z-index:15;
+}
+.m-dpad{display:grid;grid-template-areas:". u ." "l . r" ". d .";gap:4px}
+.m-btn{
+  width:52px;height:52px;
+  background:rgba(255,255,255,0.12);
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:10px;color:#fff;font-size:20px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;user-select:none;-webkit-user-select:none;
+}
+.m-btn:active{background:rgba(245,200,74,.3)}
+.m-btn.mu{grid-area:u}.m-btn.md{grid-area:d}.m-btn.ml{grid-area:l}.m-btn.mr{grid-area:r}
+.m-actions{display:flex;flex-direction:column;gap:6px}
+.m-act{
+  background:rgba(255,255,255,0.1);
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:8px;padding:8px 14px;
+  color:#fff;font-size:12px;font-family:'Hind Siliguri',sans-serif;
+  cursor:pointer;user-select:none;
+}
+.m-act:active{background:rgba(245,200,74,.3)}
 
-  /* Popup flash */
-  #flash {
-    position: absolute;
-    top: 18%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    padding: 6px 18px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s;
-    white-space: nowrap;
-  }
-  #flash.show { opacity: 1; }
+@media(max-width:600px){
+  #mobile-btns{display:flex}
+  #controls-hint{display:none}
+  #top-hud{flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">🚌 বাস গেম <span>Bangladesh</span></div>
-  <div class="badge">v1.0</div>
-</header>
+<canvas id="c"></canvas>
 
+<!-- HUD -->
 <div id="hud">
-  <div class="hud-card">
-    <div class="hud-label">স্কোর</div>
-    <div class="hud-val gold" id="h-score">0</div>
+  <div id="top-hud">
+    <div class="hcard"><div class="hcard-label">স্কোর</div><div class="hcard-val gold" id="h-score">0</div></div>
+    <div class="hcard"><div class="hcard-label">যাত্রী</div><div class="hcard-val green" id="h-pass">0/0</div></div>
+    <div class="hcard"><div class="hcard-label">সময়</div><div class="hcard-val" id="h-time">0:00</div></div>
+    <div class="hcard"><div class="hcard-label">বাস</div><div class="hcard-val" id="h-bus">—</div></div>
   </div>
-  <div class="hud-card">
-    <div class="hud-label">যাত্রী</div>
-    <div class="hud-val green" id="h-pass">0</div>
-  </div>
-  <div class="hud-card">
-    <div class="hud-label">সময়</div>
-    <div class="hud-val" id="h-time">120</div>
-  </div>
-  <div class="hud-card">
-    <div class="hud-label">জ্বালানি</div>
-    <div class="hud-val" id="h-fuel">100%</div>
+  <div id="route-bar">
+    <div class="route-dot"></div>
+    <span id="route-from">সিলেট</span>
+    <span style="color:rgba(255,255,255,0.4)">→→→</span>
+    <span id="route-to">ঢাকা</span>
+    <div class="route-dot" style="background:#6ef06e"></div>
   </div>
 </div>
 
-<div id="canvas-wrap">
-  <canvas id="gc" width="720" height="520"></canvas>
-  <div id="fuel-bar-wrap">
-    <div id="fuel-label">⛽ জ্বালানি</div>
-    <div id="fuel-bar-bg"><div id="fuel-bar-fill" style="width:100%"></div></div>
+<div id="speedometer">
+  <div id="speed-val">0</div>
+  <div id="speed-unit">km/h</div>
+  <div id="speed-label">গতি</div>
+</div>
+
+<div id="gear-box">
+  <div id="gear-label">গিয়ার</div>
+  <div id="gear-val">N</div>
+</div>
+
+<div id="fuel-wrap">
+  <div id="fuel-label">⛽ জ্বালানি</div>
+  <div id="fuel-bar"><div id="fuel-fill" style="width:100%"></div></div>
+</div>
+
+<div id="controls-hint">
+  <span class="key-hint">W/↑ গ্যাস</span>
+  <span class="key-hint">S/↓ ব্রেক</span>
+  <span class="key-hint">A/← বাম</span>
+  <span class="key-hint">D/→ ডান</span>
+  <span class="key-hint">H হর্ন</span>
+  <span class="key-hint">C ক্যামেরা</span>
+</div>
+
+<div id="flash"></div>
+
+<div id="pass-popup">
+  <h3>🚌 বাস স্টপ!</h3>
+  <p id="pass-msg">যাত্রী উঠছে...</p>
+</div>
+
+<!-- Mobile controls -->
+<div id="mobile-btns">
+  <div class="m-dpad">
+    <div class="m-btn mu" data-k="up">▲</div>
+    <div class="m-btn ml" data-k="left">◀</div>
+    <div class="m-btn mr" data-k="right">▶</div>
+    <div class="m-btn md" data-k="down">▼</div>
   </div>
-  <div id="flash"></div>
-  <div id="overlay">
-    <div class="overlay-title">🚌 বাংলাদেশ বাস গেম</div>
-    <div class="overlay-sub">যাত্রী তুলুন • গন্তব্যে পৌঁছান • পয়েন্ট জিতুন!</div>
-    <div class="overlay-score" id="ov-score" style="display:none"></div>
-    <button class="btn-play" id="ov-btn">▶ খেলা শুরু</button>
+  <div class="m-actions">
+    <div class="m-act" data-k="h">📯 হর্ন</div>
+    <div class="m-act" data-k="c">📷 ক্যামেরা</div>
   </div>
 </div>
 
-<div id="footer">
-  <div class="keys-hint">
-    <span class="hint-text">নিয়ন্ত্রণ:</span>
-    <span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span>
-    <span class="hint-text">বা</span>
-    <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span>
+<!-- Menu -->
+<div id="menu">
+  <h1>🚌 Bangladesh Bus Simulator</h1>
+  <h2>বাংলাদেশ বাস সিমুলেটর 3D</h2>
+
+  <div class="section-label">আপনার বাস বেছে নিন</div>
+  <div class="bus-picker" id="bus-picker">
+    <div class="bpick sel" data-bus="0">হেনা<div class="bpick-color" style="background:#1a237e"></div></div>
+    <div class="bpick" data-bus="1">হানিফ<div class="bpick-color" style="background:#b71c1c"></div></div>
+    <div class="bpick" data-bus="2">সাগরিকা<div class="bpick-color" style="background:#1b5e20"></div></div>
+    <div class="bpick" data-bus="3">মামুন<div class="bpick-color" style="background:#e65100"></div></div>
+    <div class="bpick" data-bus="4">গ্রিনলাইন<div class="bpick-color" style="background:#2e7d32"></div></div>
   </div>
-  <button id="btn-restart">🔄 নতুন খেলা</button>
+
+  <div class="section-label">রুট বেছে নিন</div>
+  <div class="route-picker" id="route-picker">
+    <div class="rpick sel" data-route="0">সিলেট → ঢাকা</div>
+    <div class="rpick" data-route="1">ঢাকা → চট্টগ্রাম</div>
+    <div class="rpick" data-route="2">ঢাকা → রংপুর</div>
+  </div>
+
+  <button class="btn-start" id="btn-start">▶ সিমুলেটর শুরু করুন</button>
 </div>
 
-<div id="mobile-controls">
-  <div class="dpad">
-    <div class="dpad-btn up" data-dir="up">▲</div>
-    <div class="dpad-btn left" data-dir="left">◀</div>
-    <div class="dpad-btn right" data-dir="right">▶</div>
-    <div class="dpad-btn down" data-dir="down">▼</div>
-  </div>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const canvas = document.getElementById('gc');
-const ctx = canvas.getContext('2d');
-const W = 720, H = 520;
-
-const CITIES = [
-  {name:'ঢাকা',        x:370, y:265, col:'#f5c842', tcol:'#7a5c00'},
-  {name:'চট্টগ্রাম',   x:510, y:360, col:'#42b8f5', tcol:'#004a6e'},
-  {name:'সিলেট',       x:510, y:160, col:'#f57842', tcol:'#6e2400'},
-  {name:'রাজশাহী',     x:140, y:200, col:'#42f578', tcol:'#005e1f'},
-  {name:'খুলনা',       x:210, y:390, col:'#c842f5', tcol:'#4a0066'},
-  {name:'বরিশাল',      x:330, y:415, col:'#f54275', tcol:'#6e001e'},
-  {name:'ময়মনসিংহ',   x:390, y:165, col:'#42f5e8', tcol:'#005e58'},
-  {name:'রংপুর',       x:215, y:100, col:'#f5a442', tcol:'#6e3a00'},
-  {name:'কুমিল্লা',    x:455, y:295, col:'#6278f5', tcol:'#0a0066'},
-  {name:'যশোর',        x:190, y:315, col:'#78f562', tcol:'#1e5e00'},
+// ===== BUS CONFIG =====
+const BUSES = [
+  {name:'হেনা', body:0x1a237e, stripe:0xe53935, roof:0x0d1642, window:0x90caf9, wheel:0x212121, trim:0xffd600},
+  {name:'হানিফ', body:0xb71c1c, stripe:0xfdd835, roof:0x7f0000, window:0xb3e5fc, wheel:0x1a1a1a, trim:0xfdd835},
+  {name:'সাগরিকা', body:0x1b5e20, stripe:0xfffff0, roof:0x0a3d0f, window:0xc8e6c9, wheel:0x212121, trim:0xfffff0},
+  {name:'মামুন', body:0xe65100, stripe:0xffffff, roof:0xbf360c, window:0xffe0b2, wheel:0x1a1a1a, trim:0xffffff},
+  {name:'গ্রিনলাইন', body:0x2e7d32, stripe:0xa5d6a7, roof:0x1b5e20, window:0xe8f5e9, wheel:0x212121, trim:0xffd600},
 ];
 
-const ROADS = [
-  [0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[0,8],[0,9],
-  [1,8],[2,6],[3,7],[4,5],[4,9],[6,7],[5,9],[3,9]
+const ROUTES = [
+  {name:'সিলেট → ঢাকা', from:'সিলেট', to:'ঢাকা', length:240},
+  {name:'ঢাকা → চট্টগ্রাম', from:'ঢাকা', to:'চট্টগ্রাম', length:250},
+  {name:'ঢাকা → রংপুর', from:'ঢাকা', to:'রংপুর', length:300},
 ];
 
-let bus, passengers, score, timeLeft, running, timer, keys, flashQ;
+let selBus=0, selRoute=0;
 
-function init() {
-  bus = {x:370, y:265, vx:0, vy:0, speed:3, pass:0, dest:null, destIdx:null, fuel:100, angle:0};
-  passengers = [];
-  score = 0; timeLeft = 120; running = false;
-  keys = {}; flashQ = [];
-  for(let i=0;i<7;i++) spawnPassenger();
-}
+// Bus picker
+document.querySelectorAll('.bpick').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.bpick').forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+    selBus=+b.dataset.bus;
+  });
+});
+document.querySelectorAll('.rpick').forEach(r=>{
+  r.addEventListener('click',()=>{
+    document.querySelectorAll('.rpick').forEach(x=>x.classList.remove('sel'));
+    r.classList.add('sel');
+    selRoute=+r.dataset.route;
+  });
+});
+document.getElementById('btn-start').addEventListener('click',()=>{
+  document.getElementById('menu').style.display='none';
+  startSim();
+});
 
-function spawnPassenger() {
-  const fi = Math.floor(Math.random()*CITIES.length);
-  let ti; do { ti = Math.floor(Math.random()*CITIES.length); } while(ti===fi);
-  const c = CITIES[fi];
-  passengers.push({
-    x: c.x + (Math.random()-0.5)*38,
-    y: c.y + (Math.random()-0.5)*38,
-    from: fi, dest: ti, picked: false,
-    bob: Math.random()*Math.PI*2,
-    id: Math.random()
+// ===== THREE.JS SETUP =====
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.fog = new THREE.Fog(0x87ceeb,80,400);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb,100,500);
+
+const camera = new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,0.1,1000);
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// ===== LIGHTING =====
+const ambient = new THREE.AmbientLight(0xffffff,0.6);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff5e0,1.2);
+sun.position.set(50,80,30);
+sun.castShadow=true;
+sun.shadow.mapSize.width=2048;
+sun.shadow.mapSize.height=2048;
+sun.shadow.camera.near=0.5;
+sun.shadow.camera.far=300;
+sun.shadow.camera.left=-100;
+sun.shadow.camera.right=100;
+sun.shadow.camera.top=100;
+sun.shadow.camera.bottom=-100;
+scene.add(sun);
+const hemi = new THREE.HemisphereLight(0x87ceeb,0x3a7d1e,0.4);
+scene.add(hemi);
+
+// ===== ROAD & ENVIRONMENT =====
+let roadSegments=[], trees=[], buildings=[], buses3d=[], roadStops=[];
+let busGroup, busSpeed=0, busPos=0, busAngle=0, steering=0;
+let fuel=100, score=0, passengers=0, maxPass=0, totalPass=0;
+let gameTime=0, running=false, cameraMode=0;
+let keys={};
+let hornTimer=0;
+
+// Create road
+function buildRoad(length) {
+  // Road surface
+  const roadGeo = new THREE.PlaneGeometry(10, length, 1, Math.floor(length/10));
+  const roadMat = new THREE.MeshLambertMaterial({color:0x444444});
+  const road = new THREE.Mesh(roadGeo, roadMat);
+  road.rotation.x = -Math.PI/2;
+  road.position.z = -length/2;
+  road.receiveShadow=true;
+  scene.add(road);
+
+  // Road markings
+  const markGeo = new THREE.PlaneGeometry(0.3, 4);
+  const markMat = new THREE.MeshLambertMaterial({color:0xffffff});
+  for(let z=0; z>-length; z-=12) {
+    const mark = new THREE.Mesh(markGeo, markMat);
+    mark.rotation.x=-Math.PI/2;
+    mark.position.set(0,0.01,z);
+    scene.add(mark);
+  }
+
+  // Side lines
+  const lineGeo = new THREE.PlaneGeometry(0.2, length);
+  const lineMat = new THREE.MeshLambertMaterial({color:0xffff00});
+  [-4.9,4.9].forEach(x=>{
+    const line = new THREE.Mesh(lineGeo, lineMat);
+    line.rotation.x=-Math.PI/2;
+    line.position.set(x,0.01,-length/2);
+    scene.add(line);
+  });
+
+  // Ground beside road
+  const groundGeo = new THREE.PlaneGeometry(500, length+100);
+  const groundMat = new THREE.MeshLambertMaterial({color:0x3a7d1e});
+  const ground = new THREE.Mesh(groundGeo, groundMat);
+  ground.rotation.x=-Math.PI/2;
+  ground.position.set(0,-0.01,-length/2);
+  ground.receiveShadow=true;
+  scene.add(ground);
+
+  // Footpath
+  [-6.5,6.5].forEach(x=>{
+    const fpGeo=new THREE.PlaneGeometry(2,length);
+    const fpMat=new THREE.MeshLambertMaterial({color:0x888877});
+    const fp=new THREE.Mesh(fpGeo,fpMat);
+    fp.rotation.x=-Math.PI/2;
+    fp.position.set(x,0.005,-length/2);
+    scene.add(fp);
   });
 }
 
-// Drawing
-function drawBg() {
-  // Sky gradient for background feel
-  const grd = ctx.createLinearGradient(0,0,0,H);
-  grd.addColorStop(0,'#1e4d0e');
-  grd.addColorStop(1,'#2d6e1a');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0,0,W,H);
-
-  // Grid texture
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-  ctx.lineWidth = 1;
-  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+function addTree(x,z) {
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.2,0.3,2.5,6),
+    new THREE.MeshLambertMaterial({color:0x5d3a1a})
+  );
+  trunk.position.set(x,1.25,z);
+  trunk.castShadow=true;
+  scene.add(trunk);
+  // Multiple foliage layers
+  [0,1,2].forEach(i=>{
+    const r=1.8-i*0.4, h=1.5+i*0.5;
+    const foliage=new THREE.Mesh(
+      new THREE.ConeGeometry(r,h,7),
+      new THREE.MeshLambertMaterial({color:i===1?0x2d7a10:0x1b5e20})
+    );
+    foliage.position.set(x,2.5+i*1.2,z);
+    foliage.castShadow=true;
+    scene.add(foliage);
+  });
 }
 
-function drawRoads() {
-  // Road shadow
-  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-  ctx.lineWidth = 14;
-  ctx.lineCap = 'round';
-  for(const [a,b] of ROADS){
-    ctx.beginPath();ctx.moveTo(CITIES[a].x,CITIES[a].y+2);ctx.lineTo(CITIES[b].x,CITIES[b].y+2);ctx.stroke();
-  }
-  // Road fill
-  ctx.strokeStyle = '#c8a84a';
-  ctx.lineWidth = 10;
-  for(const [a,b] of ROADS){
-    ctx.beginPath();ctx.moveTo(CITIES[a].x,CITIES[a].y);ctx.lineTo(CITIES[b].x,CITIES[b].y);ctx.stroke();
-  }
-  // Dashed center line
-  ctx.strokeStyle = '#fff8dc';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([10,8]);
-  for(const [a,b] of ROADS){
-    ctx.beginPath();ctx.moveTo(CITIES[a].x,CITIES[a].y);ctx.lineTo(CITIES[b].x,CITIES[b].y);ctx.stroke();
-  }
-  ctx.setLineDash([]);
-}
-
-function drawCities() {
-  for(let i=0;i<CITIES.length;i++){
-    const c = CITIES[i];
-    const isDest = bus.destIdx === i;
-
-    // Glow for destination
-    if(isDest) {
-      ctx.beginPath();
-      ctx.arc(c.x,c.y,22,0,Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fill();
+function addBuilding(x,z,w,d,h,color) {
+  const geo=new THREE.BoxGeometry(w,h,d);
+  const mat=new THREE.MeshLambertMaterial({color});
+  const b=new THREE.Mesh(geo,mat);
+  b.position.set(x,h/2,z);
+  b.castShadow=true;b.receiveShadow=true;
+  scene.add(b);
+  // Windows
+  const winMat=new THREE.MeshLambertMaterial({color:0xadd8e6,emissive:0x334444,emissiveIntensity:0.3});
+  for(let fy=1;fy<h-1;fy+=2.5){
+    for(let fx=-w/2+0.8;fx<w/2-0.5;fx+=1.5){
+      const win=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.8,0.05),winMat);
+      win.position.set(x+fx,fy+0.5,z+d/2+0.01);
+      scene.add(win);
     }
+  }
+}
 
-    // City circle
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, isDest ? 16 : 11, 0, Math.PI*2);
-    ctx.fillStyle = c.col;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+function addBusStop(z) {
+  // Pole
+  const pole=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08,0.08,4,8),
+    new THREE.MeshLambertMaterial({color:0x888888})
+  );
+  pole.position.set(5.5,2,z);
+  scene.add(pole);
+  // Sign board
+  const sign=new THREE.Mesh(
+    new THREE.BoxGeometry(1.8,0.6,0.05),
+    new THREE.MeshLambertMaterial({color:0xd32f2f})
+  );
+  sign.position.set(5.5,4.2,z);
+  scene.add(sign);
+  // Shelter
+  const roof=new THREE.Mesh(
+    new THREE.BoxGeometry(3,0.2,1.5),
+    new THREE.MeshLambertMaterial({color:0x1a237e})
+  );
+  roof.position.set(5.5,3.2,z);
+  scene.add(roof);
+  roadStops.push({z, triggered:false});
+}
 
-    if(isDest) {
-      // Flag emoji
-      ctx.font = '16px serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('🏁', c.x, c.y - 22);
+function buildEnvironment(length) {
+  buildRoad(length);
+  // Trees on both sides
+  for(let z=0;z>-length;z-=8+(Math.random()*6)){
+    if(Math.random()>.3){addTree(9+(Math.random()*15),z+Math.random()*4-2);}
+    if(Math.random()>.3){addTree(-(9+(Math.random()*15)),z+Math.random()*4-2);}
+  }
+  // Buildings in towns
+  const towns=[0,-length*.25,-length*.5,-length*.75,-length];
+  towns.forEach(tz=>{
+    for(let i=0;i<6;i++){
+      const side=Math.random()>.5?1:-1;
+      const x=side*(14+Math.random()*10);
+      const bz=tz+Math.random()*40-20;
+      const h=4+Math.random()*10;
+      const colors=[0xd2691e,0xc0c0c0,0xb8860b,0x8b7355,0xd2b48c,0xa0522d];
+      addBuilding(x,bz,4+Math.random()*4,4+Math.random()*4,h,colors[Math.floor(Math.random()*colors.length)]);
     }
-
-    // City name
-    ctx.fillStyle = '#fff';
-    ctx.font = '500 11px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(c.name, c.x, c.y + 27);
-    ctx.shadowBlur = 0;
+  });
+  // Bus stops
+  [0,-length*.2,-length*.4,-length*.6,-length*.8,-length].forEach(z=>{
+    addBusStop(z);
+  });
+  // Mountains far bg
+  for(let i=0;i<8;i++){
+    const mt=new THREE.Mesh(
+      new THREE.ConeGeometry(20+Math.random()*20,30+Math.random()*30,5),
+      new THREE.MeshLambertMaterial({color:0x4a7a4a})
+    );
+    mt.position.set(-80+Math.random()*160,-5,-length*Math.random());
+    scene.add(mt);
   }
 }
 
-function drawPassengers() {
-  for(const p of passengers) {
-    if(p.picked) continue;
-    p.bob += 0.05;
-    const bobY = Math.sin(p.bob)*2.5;
-    ctx.font = '20px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('🧍', p.x, p.y - 4 + bobY);
-    // Destination label
-    ctx.fillStyle = 'rgba(255,255,255,0.82)';
-    ctx.font = '600 9px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('→ '+CITIES[p.dest].name, p.x, p.y+10);
-  }
-}
+// ===== BUS MODEL =====
+function buildBus3D(bt) {
+  const group = new THREE.Group();
 
-function drawBus() {
-  const bx = bus.x, by = bus.y;
-  ctx.save();
-  ctx.translate(bx, by);
+  // Main body
+  const bodyGeo = new THREE.BoxGeometry(2.4,2.2,8);
+  const bodyMat = new THREE.MeshLambertMaterial({color:bt.body});
+  const body = new THREE.Mesh(bodyGeo,bodyMat);
+  body.position.y=1.5;
+  body.castShadow=true;
+  group.add(body);
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.22)';
-  ctx.beginPath();
-  ctx.ellipse(2, 14, 18, 6, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  // Body
-  ctx.fillStyle = '#d32f2f';
-  ctx.beginPath();
-  ctx.roundRect(-17, -11, 34, 22, 5);
-  ctx.fill();
+  // Roof
+  const roofGeo=new THREE.BoxGeometry(2.3,0.3,8);
+  const roofMat=new THREE.MeshLambertMaterial({color:bt.roof});
+  const roof=new THREE.Mesh(roofGeo,roofMat);
+  roof.position.y=2.75;
+  group.add(roof);
 
   // Stripe
-  ctx.fillStyle = '#b71c1c';
-  ctx.fillRect(-17, 2, 34, 3);
+  const stripeGeo=new THREE.BoxGeometry(2.42,0.25,8);
+  const stripeMat=new THREE.MeshLambertMaterial({color:bt.stripe});
+  const stripe=new THREE.Mesh(stripeGeo,stripeMat);
+  stripe.position.y=1.8;
+  group.add(stripe);
 
-  // Windows
-  ctx.fillStyle = '#bbdefb';
-  ctx.fillRect(-12, -8, 10, 8);
-  ctx.fillRect(2, -8, 10, 8);
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 0.5;
-  ctx.strokeRect(-12,-8,10,8); ctx.strokeRect(2,-8,10,8);
+  // Windows - side left
+  const winMat=new THREE.MeshLambertMaterial({color:bt.window,transparent:true,opacity:.8});
+  for(let i=0;i<5;i++){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.7,1.1),winMat);
+    win.position.set(-1.22,2.0,-2.5+i*1.2);
+    group.add(win);
+  }
+  // Windows - side right
+  for(let i=0;i<5;i++){
+    const win=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.7,1.1),winMat);
+    win.position.set(1.22,2.0,-2.5+i*1.2);
+    group.add(win);
+  }
+
+  // Front windshield
+  const frontWin=new THREE.Mesh(new THREE.BoxGeometry(2.0,0.9,0.05),winMat);
+  frontWin.position.set(0,2.1,4.02);
+  group.add(frontWin);
+
+  // Front face details
+  const frontMat=new THREE.MeshLambertMaterial({color:bt.roof});
+  const front=new THREE.Mesh(new THREE.BoxGeometry(2.4,2.2,0.1),frontMat);
+  front.position.set(0,1.5,4.05);
+  group.add(front);
+
+  // Headlights
+  const hlMat=new THREE.MeshLambertMaterial({color:0xfffde7,emissive:0xffff99,emissiveIntensity:.5});
+  [-0.7,0.7].forEach(x=>{
+    const hl=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.25,0.1),hlMat);
+    hl.position.set(x,0.8,4.06);
+    group.add(hl);
+  });
+
+  // Rear lights
+  const rlMat=new THREE.MeshLambertMaterial({color:0xff1111,emissive:0xff0000,emissiveIntensity:.3});
+  [-0.7,0.7].forEach(x=>{
+    const rl=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.25,0.1),rlMat);
+    rl.position.set(x,0.8,-4.06);
+    group.add(rl);
+  });
+
+  // Door
+  const doorMat=new THREE.MeshLambertMaterial({color:bt.body});
+  const door=new THREE.Mesh(new THREE.BoxGeometry(0.9,1.8,0.05),doorMat);
+  door.position.set(-1.22,0.9,2.5);
+  group.add(door);
+  const doorLine=new THREE.Mesh(new THREE.BoxGeometry(0.02,1.8,0.06),new THREE.MeshLambertMaterial({color:0x333333}));
+  doorLine.position.set(-0.78,0.9,2.5);
+  group.add(doorLine);
 
   // Wheels
-  ctx.fillStyle = '#212121';
-  ctx.beginPath(); ctx.arc(-9, 11, 4.5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(9, 11, 4.5, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#bdbdbd';
-  ctx.beginPath(); ctx.arc(-9, 11, 2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(9, 11, 2, 0, Math.PI*2); ctx.fill();
-
-  // Headlight
-  ctx.fillStyle = '#fff176';
-  ctx.fillRect(15,-6,3,4);
-
-  // Passenger count badge
-  if(bus.pass > 0) {
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(18, -14, 9, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = '#d32f2f';
-    ctx.font = 'bold 11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(bus.pass, 18, -11);
-  }
-
-  ctx.restore();
-}
-
-let flashAnim = [];
-function showFlash(text, color) {
-  flashAnim.push({text, color, alpha:1, y:bus.y - 30, life:50});
-}
-
-function drawFlashes() {
-  for(let i=flashAnim.length-1;i>=0;i--){
-    const f = flashAnim[i];
-    f.alpha = f.life/50;
-    f.y -= 0.7;
-    f.life--;
-    ctx.save();
-    ctx.globalAlpha = f.alpha;
-    ctx.fillStyle = f.color || '#fff';
-    ctx.font = 'bold 15px "Hind Siliguri", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.6)';
-    ctx.shadowBlur = 6;
-    ctx.fillText(f.text, bus.x, f.y);
-    ctx.restore();
-    if(f.life <= 0) flashAnim.splice(i,1);
-  }
-}
-
-function update() {
-  const accel = 0.45, friction = 0.80;
-  if(keys['ArrowLeft']||keys['a']||keys['A']||keys['left']) bus.vx -= accel;
-  if(keys['ArrowRight']||keys['d']||keys['D']||keys['right']) bus.vx += accel;
-  if(keys['ArrowUp']||keys['w']||keys['W']||keys['up']) bus.vy -= accel;
-  if(keys['ArrowDown']||keys['s']||keys['S']||keys['down']) bus.vy += accel;
-  bus.vx *= friction; bus.vy *= friction;
-  const spd = Math.sqrt(bus.vx**2+bus.vy**2);
-  if(spd > bus.speed){bus.vx=bus.vx/spd*bus.speed; bus.vy=bus.vy/spd*bus.speed;}
-  bus.x = Math.max(18, Math.min(W-18, bus.x+bus.vx));
-  bus.y = Math.max(18, Math.min(H-18, bus.y+bus.vy));
-  if(spd > 0.25) bus.fuel = Math.max(0, bus.fuel - 0.025);
-  if(bus.fuel <= 0){ endGame('⛽ জ্বালানি শেষ হয়ে গেছে!'); return; }
-
-  // Pick up passengers
-  for(const p of passengers){
-    if(p.picked || bus.destIdx !== null) continue;
-    const dx=bus.x-p.x, dy=bus.y-p.y;
-    if(Math.sqrt(dx*dx+dy*dy)<26){
-      p.picked=true;
-      bus.pass++;
-      bus.destIdx=p.dest;
-      bus.dest=CITIES[p.dest];
-      showFlash('+যাত্রী উঠলো 🙌', '#4caf50');
-      updateHUD(); updateFuelBar();
-    }
-  }
-
-  // Deliver passengers
-  if(bus.dest){
-    const dx=bus.x-bus.dest.x, dy=bus.y-bus.dest.y;
-    if(Math.sqrt(dx*dx+dy*dy)<22){
-      const pts=bus.pass*60 + Math.ceil(timeLeft/10)*5;
-      score+=pts;
-      showFlash(`+${pts} পয়েন্ট! 🎉`, '#f5c842');
-      bus.pass=0; bus.dest=null; bus.destIdx=null;
-      bus.fuel=Math.min(100, bus.fuel+25);
-      spawnPassenger();
-      updateHUD(); updateFuelBar();
-    }
-  }
-
-  updateHUD(); updateFuelBar();
-}
-
-function updateHUD(){
-  document.getElementById('h-score').textContent = score;
-  document.getElementById('h-pass').textContent = bus.pass;
-  document.getElementById('h-time').textContent = timeLeft;
-  const fv = Math.round(bus.fuel);
-  const hf = document.getElementById('h-fuel');
-  hf.textContent = fv+'%';
-  hf.className = 'hud-val' + (fv>50?' green': fv>25?'':' red');
-}
-
-function updateFuelBar(){
-  const pct = bus.fuel/100;
-  const fill = document.getElementById('fuel-bar-fill');
-  fill.style.width = (pct*100)+'%';
-  fill.style.background = pct>0.5?'#4caf50': pct>0.25?'#ff9800':'#f44336';
-}
-
-function endGame(reason) {
-  running = false;
-  clearInterval(timer);
-  const ov = document.getElementById('overlay');
-  document.querySelector('.overlay-title').textContent = reason;
-  document.querySelector('.overlay-sub').textContent = 'আপনার মোট স্কোর:';
-  const ovsc = document.getElementById('ov-score');
-  ovsc.style.display = 'block';
-  ovsc.textContent = score + ' পয়েন্ট';
-  document.getElementById('ov-btn').textContent = '🔄 আবার খেলুন';
-  ov.classList.remove('hidden');
-}
-
-function startGame(){
-  init();
-  const ov = document.getElementById('overlay');
-  ov.classList.add('hidden');
-  updateHUD(); updateFuelBar();
-  running = true;
-  clearInterval(timer);
-  timer = setInterval(()=>{
-    if(!running) return;
-    timeLeft--;
-    document.getElementById('h-time').textContent = timeLeft;
-    if(timeLeft<=0) endGame('⏰ সময় শেষ হয়ে গেছে!');
-  },1000);
-  requestAnimationFrame(loop);
-}
-
-function loop(){
-  if(!running) return;
-  ctx.clearRect(0,0,W,H);
-  drawBg(); drawRoads(); drawCities(); drawPassengers(); drawBus(); drawFlashes();
-  update();
-  requestAnimationFrame(loop);
-}
-
-// Keyboard
-document.addEventListener('keydown', e=>{
-  keys[e.key]=true;
-  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
-});
-document.addEventListener('keyup', e=>{ keys[e.key]=false; });
-
-// Mobile d-pad
-document.querySelectorAll('.dpad-btn').forEach(btn=>{
-  btn.addEventListener('pointerdown', e=>{
-    e.preventDefault();
-    const d = btn.dataset.dir;
-    if(d==='up') keys['up']=true;
-    if(d==='down') keys['down']=true;
-    if(d==='left') keys['left']=true;
-    if(d==='right') keys['right']=true;
+  const wheelGeo=new THREE.CylinderGeometry(0.45,0.45,0.3,16);
+  const wheelMat=new THREE.MeshLambertMaterial({color:bt.wheel});
+  const hubMat=new THREE.MeshLambertMaterial({color:0x888888});
+  [[-1.3,2.8],[-1.3,-2.8],[1.3,2.8],[1.3,-2.8]].forEach(([x,z])=>{
+    const wheel=new THREE.Mesh(wheelGeo,wheelMat);
+    wheel.rotation.z=Math.PI/2;
+    wheel.position.set(x,0.45,z);
+    group.add(wheel);
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,0.32,8),hubMat);
+    hub.rotation.z=Math.PI/2;
+    hub.position.set(x,0.45,z);
+    group.add(hub);
   });
-  const up = e=>{
-    const d = btn.dataset.dir;
-    keys[d]=false;
-  };
-  btn.addEventListener('pointerup', up);
-  btn.addEventListener('pointerleave', up);
+
+  // Exhaust pipe
+  const exhaust=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08,0.08,1,8),
+    new THREE.MeshLambertMaterial({color:0x333333})
+  );
+  exhaust.rotation.z=Math.PI/2;
+  exhaust.position.set(1.3,0.3,-3.8);
+  group.add(exhaust);
+
+  // Bus number plate
+  const plateMat=new THREE.MeshLambertMaterial({color:bt.trim});
+  const plate=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.3,0.05),plateMat);
+  plate.position.set(0,0.4,4.07);
+  group.add(plate);
+
+  group.castShadow=true;
+  return group;
+}
+
+// ===== PEDESTRIANS =====
+function addPedestrian(x,z) {
+  const g=new THREE.Group();
+  const bodyM=new THREE.MeshLambertMaterial({color:Math.random()>0.5?0x1565c0:0xe53935});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,1,8),bodyM);
+  body.position.y=0.7;g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,8),new THREE.MeshLambertMaterial({color:0xf5cba7}));
+  head.position.y=1.5;g.add(head);
+  g.position.set(x,0,z);
+  scene.add(g);
+  return g;
+}
+
+// ===== GAME STATE =====
+let route, routeLength;
+let startTime;
+let peds=[];
+
+function startSim(){
+  // Clear scene objects
+  while(scene.children.length>0)scene.remove(scene.children[0]);
+  scene.add(ambient);scene.add(sun);scene.add(hemi);
+  roadStops=[];peds=[];
+
+  const bt=BUSES[selBus];
+  route=ROUTES[selRoute];
+  routeLength=route.length*3; // units
+
+  // Update HUD
+  document.getElementById('h-bus').textContent=bt.name;
+  document.getElementById('route-from').textContent=route.from;
+  document.getElementById('route-to').textContent=route.to;
+
+  buildEnvironment(routeLength);
+
+  // Add pedestrians
+  for(let i=0;i<30;i++){
+    const z=-(Math.random()*routeLength);
+    const x=Math.random()>0.5?6:(-6);
+    peds.push(addPedestrian(x,z));
+  }
+
+  // Build bus
+  busGroup=buildBus3D(bt);
+  busGroup.position.set(0,0,0);
+  scene.add(busGroup);
+
+  busSpeed=0;busPos=0;busAngle=0;steering=0;
+  fuel=100;score=0;passengers=0;maxPass=8;totalPass=0;
+  gameTime=0;running=true;
+  startTime=Date.now();
+  cameraMode=0;
+
+  // Clouds
+  for(let i=0;i<15;i++){
+    const cloud=new THREE.Group();
+    [0,1.2,-1].forEach((ox,j)=>{
+      const cp=new THREE.Mesh(
+        new THREE.SphereGeometry(4+j,7,7),
+        new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.85})
+      );
+      cp.position.set(ox*3,j*1.5,0);
+      cloud.add(cp);
+    });
+    cloud.position.set(
+      Math.random()*200-100,
+      30+Math.random()*20,
+      -(Math.random()*routeLength)
+    );
+    scene.add(cloud);
+  }
+
+  // Animate
+  animate();
+}
+
+// Camera positions
+function updateCamera() {
+  if(cameraMode===0) {
+    // Third person behind bus
+    const behind=new THREE.Vector3(0,5,12);
+    behind.applyEuler(new THREE.Euler(0,busAngle,0));
+    camera.position.lerp(
+      new THREE.Vector3(busGroup.position.x+behind.x, busGroup.position.y+behind.y, busGroup.position.z+behind.z),
+      0.08
+    );
+    camera.lookAt(busGroup.position.x,busGroup.position.y+1.5,busGroup.position.z);
+  } else if(cameraMode===1) {
+    // Driver view
+    const fwd=new THREE.Vector3(Math.sin(busAngle)*3,2.2,Math.cos(busAngle)*3);
+    camera.position.set(
+      busGroup.position.x-Math.sin(busAngle)*0.3,
+      busGroup.position.y+2.1,
+      busGroup.position.z+Math.cos(busAngle)*0.5
+    );
+    camera.lookAt(
+      busGroup.position.x+fwd.x,
+      busGroup.position.y+fwd.y,
+      busGroup.position.z+fwd.z
+    );
+  } else {
+    // Side view
+    camera.position.lerp(
+      new THREE.Vector3(busGroup.position.x+15, busGroup.position.y+6, busGroup.position.z),
+      0.05
+    );
+    camera.lookAt(busGroup.position.x,busGroup.position.y+1,busGroup.position.z);
+  }
+}
+
+function updateBus(dt) {
+  const accel=keys.up?0.08:0;
+  const brake=keys.down?0.15:0;
+  const turn=keys.left?0.025:keys.right?-0.025:0;
+
+  if(accel && fuel>0) {
+    busSpeed=Math.min(busSpeed+accel,2.5+(selBus*.2));
+    fuel=Math.max(0,fuel-0.015);
+  } else {
+    busSpeed=Math.max(0,busSpeed-0.04);
+  }
+  if(brake) busSpeed=Math.max(0,busSpeed-brake);
+  if(fuel<=0) busSpeed=Math.max(0,busSpeed-0.02);
+
+  if(busSpeed>0.1) steering=turn;
+  else steering=0;
+  busAngle+=steering*busSpeed;
+
+  busGroup.position.x+=Math.sin(busAngle)*busSpeed;
+  busGroup.position.z-=Math.cos(busAngle)*busSpeed;
+  busGroup.rotation.y=busAngle;
+
+  // Wheel rotation
+  const wheelSpeed=busSpeed*0.5;
+  busGroup.children.forEach(c=>{
+    if(c.geometry instanceof THREE.CylinderGeometry && c.geometry.parameters.radiusTop===0.45){
+      c.rotation.x+=wheelSpeed;
+    }
+  });
+
+  // Keep on road roughly
+  busGroup.position.x=Math.max(-4,Math.min(4,busGroup.position.x));
+
+  // Track progress
+  busPos=Math.abs(busGroup.position.z);
+
+  // Check if reached destination
+  if(busPos >= routeLength-10){
+    endGame('🎉 গন্তব্যে পৌঁছেছেন!');
+    return;
+  }
+
+  // Check bus stops
+  for(const stop of roadStops){
+    if(!stop.triggered && Math.abs(busGroup.position.z-stop.z)<3 && busSpeed<0.5){
+      stop.triggered=true;
+      triggerBusStop(stop);
+    }
+  }
+
+  // Update speedometer
+  const kmh=Math.round(busSpeed*60);
+  document.getElementById('speed-val').textContent=kmh;
+
+  // Gear
+  const g=busSpeed<0.3?'N':busSpeed<0.8?'1':busSpeed<1.4?'2':busSpeed<2.0?'3':busSpeed<2.3?'4':'5';
+  document.getElementById('gear-val').textContent=g;
+
+  // Fuel bar
+  document.getElementById('fuel-fill').style.width=fuel+'%';
+  document.getElementById('fuel-fill').style.background=fuel>50?'#4caf50':fuel>25?'#ff9800':'#f44336';
+  document.getElementById('h-fuel')&&(document.getElementById('h-fuel').textContent=Math.round(fuel)+'%');
+
+  // Score from driving
+  if(busSpeed>0.5) score+=0.05;
+
+  // Time
+  const elapsed=Math.floor((Date.now()-startTime)/1000);
+  const m=Math.floor(elapsed/60);
+  const s=elapsed%60;
+  document.getElementById('h-time').textContent=m+':'+(s<10?'0':'')+s;
+  document.getElementById('h-score').textContent=Math.floor(score);
+  document.getElementById('h-pass').textContent=passengers+'/'+maxPass;
+
+  if(fuel<=0 && busSpeed===0) endGame('⛽ জ্বালানি শেষ!');
+}
+
+function triggerBusStop(stop) {
+  const picked=Math.floor(Math.random()*3)+1;
+  const dropped=Math.min(passengers,Math.floor(Math.random()*passengers+1));
+  passengers=Math.max(0,passengers-dropped)+Math.min(picked,maxPass-passengers);
+  totalPass+=picked;
+  score+=picked*100+dropped*50;
+  showFlash(`+${picked} যাত্রী উঠলো! 🙌`);
+  document.getElementById('h-pass').textContent=passengers+'/'+maxPass;
+  document.getElementById('h-score').textContent=Math.floor(score);
+}
+
+function showFlash(text){
+  const f=document.getElementById('flash');
+  f.textContent=text;f.classList.add('show');
+  clearTimeout(f._t);
+  f._t=setTimeout(()=>f.classList.remove('show'),2000);
+}
+
+function endGame(msg){
+  running=false;
+  setTimeout(()=>{
+    const finalScore=Math.floor(score+passengers*200);
+    if(confirm(`${msg}\n\nস্কোর: ${finalScore}\nযাত্রী: ${totalPass}\n\nআবার খেলবেন?`)){
+      document.getElementById('menu').style.display='flex';
+    }
+  },500);
+}
+
+// Horn
+function honk(){
+  try{
+    const ctx2=new AudioContext();
+    const osc=ctx2.createOscillator();
+    const gain=ctx2.createGain();
+    osc.connect(gain);gain.connect(ctx2.destination);
+    osc.frequency.setValueAtTime(220,ctx2.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(180,ctx2.currentTime+0.3);
+    gain.gain.setValueAtTime(0.3,ctx2.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx2.currentTime+0.4);
+    osc.start();osc.stop(ctx2.currentTime+0.4);
+    showFlash('📯 পোঁ পোঁ!');
+  }catch(e){}
+}
+
+// Animate pedestrians
+function animatePeds(dt){
+  peds.forEach((p,i)=>{
+    p.position.x+=Math.sin(Date.now()*0.001+i)*0.005;
+    p.children[0].rotation.y+=0.01;
+  });
+}
+
+function animate(){
+  if(!running)return;
+  requestAnimationFrame(animate);
+  const dt=1/60;
+  updateBus(dt);
+  updateCamera();
+  animatePeds(dt);
+  // Fog based on time of day effect
+  renderer.render(scene,camera);
+}
+
+// ===== INPUT =====
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp'||e.key==='w'||e.key==='W')keys.up=true;
+  if(e.key==='ArrowDown'||e.key==='s'||e.key==='S')keys.down=true;
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.left=true;
+  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.right=true;
+  if(e.key==='h'||e.key==='H')honk();
+  if(e.key==='c'||e.key==='C')cameraMode=(cameraMode+1)%3;
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();
+});
+document.addEventListener('keyup',e=>{
+  if(e.key==='ArrowUp'||e.key==='w'||e.key==='W')keys.up=false;
+  if(e.key==='ArrowDown'||e.key==='s'||e.key==='S')keys.down=false;
+  if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.left=false;
+  if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.right=false;
 });
 
-// Buttons
-document.getElementById('ov-btn').addEventListener('click', startGame);
-document.getElementById('btn-restart').addEventListener('click', startGame);
+// Mobile
+document.querySelectorAll('.m-btn').forEach(btn=>{
+  const k=btn.dataset.k;
+  if(k==='h'){btn.addEventListener('pointerdown',honk);return;}
+  if(k==='c'){btn.addEventListener('pointerdown',()=>cameraMode=(cameraMode+1)%3);return;}
+  btn.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;});
+  const up=()=>keys[k]=false;
+  btn.addEventListener('pointerup',up);btn.addEventListener('pointerleave',up);
+});
+document.querySelectorAll('.m-act').forEach(btn=>{
+  const k=btn.dataset.k;
+  btn.addEventListener('pointerdown',e=>{
+    e.preventDefault();
+    if(k==='h')honk();
+    if(k==='c')cameraMode=(cameraMode+1)%3;
+  });
+});
 
 // Initial render
-init();
-(function staticRender(){
-  ctx.clearRect(0,0,W,H);
-  drawBg(); drawRoads(); drawCities();
-  for(const p of passengers){
-    ctx.font='20px serif'; ctx.textAlign='center'; ctx.fillText('🧍',p.x,p.y);
-  }
-})();
+renderer.render(scene,camera);
 </script>
 </body>
 </html>
